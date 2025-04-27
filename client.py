@@ -6,13 +6,21 @@ from solana.keypair import Keypair
 class OrcaClient:
     def __init__(self,rpc_url):
         self.client = AsyncClient(rpc_url)
-    
+    def keypair_from_base58(secret_b58: str) -> Keypair:
+      try:
+          decoded_secret = base58.b58decode(secret_b58)
+          if len(decoded_secret)!=64:
+              raise ValueError("expected 64 bit key here")
+          return Keypair.from_secret_key(decoded_secret)
+      except Exception as e:
+          print(f"error decodeing the secret key:{e}")
+          raise e
     async def send_transaction(self,payer:Keypair,tx:Transaction):
       try :
-        tx_resp = await self.client.send_transaction(tx, payer, opts=TxOpts(skip_confirmation=False))
+        tx_resp = await self.client.send_transaction(tx,payer,opts=TxOpts(skip_confirmation=False))
         return tx_resp["result"]
       except Exception as e:
-        print(f'Something went wrong:{e}')
+        print(f'an error occured:{e}')
     async def parse_response(self, tx_sig: str):
         resp = await self.client.get_confirmed_transaction(tx_sig)
         return resp.value
